@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Advanced Calculator">
+    <title>Advanced Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .calculator {
+            width: 320px;
+            background-color: #333;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .calculator-display {
+            background-color: #222;
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .operation-history {
+            height: 20px;
+            font-size: 14px;
+            color: #888;
+            text-align: right;
+            margin-bottom: 10px;
+        }
+
+        .calculator-screen {
+            width: 100%;
+            height: 60px;
+            font-size: 32px;
+            text-align: right;
+            border: none;
+            background-color: transparent;
+            color: white;
+        }
+
+        .calculator-keys {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 10px;
+        }
+
+        button {
+            height: 60px;
+            font-size: 24px;
+            background-color: #f1f3f4;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #ddd;
+        }
+
+        .operator {
+            background-color: #f76c6c;
+            color: white;
+        }
+
+        .operator:hover {
+            background-color: #ff5959;
+        }
+
+        .equal-sign {
+            background-color: #4caf50;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .equal-sign:hover {
+            background-color: #45a049;
+        }
+
+        .clear {
+            background-color: #ff9f43;
+            color: white;
+        }
+
+        .clear:hover {
+            background-color: #ff851b;
+        }
+
+        .zero {
+            grid-column: span 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="calculator-display">
+            <div id="operation-history" class="operation-history"></div>
+            <input type="text" id="display" class="calculator-screen" disabled />
+        </div>
+
+        <div class="calculator-keys">
+            <!-- Row 1 -->
+            <button type="button" class="operator" value="sqrt">√</button>
+            <button type="button" class="operator" value="**">^</button>
+            <button type="button" class="operator" value="%">%</button>
+            <button type="button" class="operator" value="/">÷</button>
+
+            <!-- Row 2 -->
+            <button type="button" value="7">7</button>
+            <button type="button" value="8">8</button>
+            <button type="button" value="9">9</button>
+            <button type="button" class="operator" value="*">×</button>
+
+            <!-- Row 3 -->
+            <button type="button" value="4">4</button>
+            <button type="button" value="5">5</button>
+            <button type="button" value="6">6</button>
+            <button type="button" class="operator" value="-">-</button>
+
+            <!-- Row 4 -->
+            <button type="button" value="1">1</button>
+            <button type="button" value="2">2</button>
+            <button type="button" value="3">3</button>
+            <button type="button" class="operator" value="+">+</button>
+
+            <!-- Row 5 -->
+            <button type="button" value="0" class="zero">0</button>
+            <button type="button" value=".">.</button>
+            <button type="button" class="clear" value="clear">C</button>
+            <button type="button" value="=" class="equal-sign">=</button>
+        </div>
+    </div>
+
+    <script>
+        const display = document.querySelector('#display');
+        const operationHistory = document.querySelector('#operation-history');
+        const keys = document.querySelector('.calculator-keys');
+
+        let currentInput = '';
+        let previousInput = '';
+        let operator = '';
+        let history = '';
+
+        keys.addEventListener('click', (event) => {
+            const { target } = event;
+            const value = target.value;
+
+            if (!target.matches('button')) return;
+
+            switch (value) {
+                case '+':
+                case '-':
+                case '*':
+                case '/':
+                case '**':
+                case '%':
+                    handleOperator(value);
+                    break;
+                case 'sqrt':
+                    handleSquareRoot();
+                    break;
+                case '=':
+                    calculate();
+                    break;
+                case 'clear':
+                    clearDisplay();
+                    break;
+                case '.':
+                    handleDecimal();
+                    break;
+                default:
+                    handleNumber(value);
+                    break;
+            }
+
+            updateDisplay();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            const key = event.key;
+            if (!isNaN(key)) {
+                handleNumber(key);
+            } else if (key === '.') {
+                handleDecimal();
+            } else if (key === 'Enter') {
+                calculate();
+            } else if (key === 'Backspace') {
+                clearDisplay();
+            } else if (['+', '-', '*', '/'].includes(key)) {
+                handleOperator(key);
+            }
+            updateDisplay();
+        });
+
+        function handleNumber(num) {
+            if (currentInput.length < 10) {
+                currentInput += num;
+            }
+        }
+
+        function handleDecimal() {
+            if (!currentInput.includes('.')) {
+                currentInput += '.';
+            }
+        }
+
+        function handleOperator(op) {
+            if (currentInput === '') return;
+
+            if (previousInput !== '') {
+                calculate();
+            }
+
+            operator = op;
+            previousInput = currentInput;
+            currentInput = '';
+            history = previousInput + ' ' + operator;
+            updateOperationHistory();
+        }
+
+        function handleSquareRoot() {
+            if (currentInput !== '') {
+                currentInput = String(Math.sqrt(parseFloat(currentInput)));
+            } else if (previousInput !== '') {
+                previousInput = String(Math.sqrt(parseFloat(previousInput)));
+                currentInput = previousInput;
+            }
+            updateOperationHistory();
+        }
+
+        function calculate() {
+            let result;
+
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            if (isNaN(prev) || isNaN(current)) return;
+
+            switch (operator) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    result = prev / current;
+                    break;
+                case '**':
+                    result = Math.pow(prev, current);
+                    break;
+                case '%':
+                    result = (prev / 100) * current;
+                    break;
+                default:
+                    return;
+            }
+
+            currentInput = String(result).slice(0, 10); // Limit display to 10 digits
+            operator = '';
+            previousInput = '';
+            history += ' ' + current + ' = ' + currentInput;
+            updateOperationHistory();
+        }
+
+        function clearDisplay() {
+            currentInput = '';
+            previousInput = '';
+            operator = '';
+            history = '';
+            updateOperationHistory();
+        }
+
+        function updateDisplay() {
+            display.value = currentInput || previousInput || '0';
+        }
+
+        function updateOperationHistory() {
+            operationHistory.textContent = history;
+        }
+    </script>
+</body>
+</html>
